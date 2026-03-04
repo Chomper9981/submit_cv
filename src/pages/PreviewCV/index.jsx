@@ -12,9 +12,14 @@ const PreviewCV = ({ data }) => {
   const [localData] = useState(() => {
     if (data) return null;
     const storedData = localStorage.getItem("cv_data");
+    const storedAvatar = localStorage.getItem("cv_avatar");
     if (storedData) {
       try {
-        return JSON.parse(storedData);
+        const parsed = JSON.parse(storedData);
+        if (storedAvatar) {
+          parsed.avatarUrl = storedAvatar;
+        }
+        return parsed;
       } catch (e) {
         console.error("Error parsing CV data", e);
       }
@@ -86,6 +91,7 @@ const PreviewCV = ({ data }) => {
     activities = "",
     references = [],
     projects = [],
+    avatarUrl = "",
   } = cvData;
 
   return (
@@ -117,7 +123,9 @@ const PreviewCV = ({ data }) => {
           <div className="preview-cv-sidebar">
             {/* Avatar */}
             <div className="preview-cv-avatar-container">
-              <div className="preview-cv-avatar-inner">👤</div>
+              <div className="preview-cv-avatar-inner">
+                {avatarUrl ? <img src={avatarUrl} alt="Avatar" /> : "👤"}
+              </div>
             </div>
 
             {/* Sidebar Info */}

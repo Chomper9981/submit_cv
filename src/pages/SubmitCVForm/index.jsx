@@ -34,11 +34,22 @@ const SubmitCVForm = ({ onSubmit }) => {
 
   useEffect(() => {
     const storedData = localStorage.getItem("cv_data");
+    const storedAvatar = localStorage.getItem("cv_avatar");
     if (storedData) {
       try {
         const parsedData = JSON.parse(storedData);
         if (parsedData.dateOfBirth) {
           parsedData.dateOfBirth = dayjs(parsedData.dateOfBirth);
+        }
+        if (storedAvatar) {
+          parsedData.avatar = [
+            {
+              uid: "-1",
+              name: "avatar.png",
+              status: "done",
+              url: storedAvatar,
+            },
+          ];
         }
         form.setFieldsValue(parsedData);
       } catch (e) {
@@ -49,17 +60,95 @@ const SubmitCVForm = ({ onSubmit }) => {
 
   const handleResetCV = () => {
     localStorage.removeItem("cv_data");
+    localStorage.removeItem("cv_avatar");
     form.resetFields();
   };
 
-  const onFinish = (values) => {
-    localStorage.setItem("cv_data", JSON.stringify(values));
+  const getBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const img = new Image();
+        img.src = reader.result;
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const MAX_WIDTH = 300;
+          const MAX_HEIGHT = 300;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", 0.7));
+        };
+        img.onerror = (err) => reject(err);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+
+  const onFinish = async (values) => {
+    const { avatar, ...cvDataWithoutAvatar } = values;
+    localStorage.setItem("cv_data", JSON.stringify(cvDataWithoutAvatar));
+
+    if (avatar && avatar.length > 0 && avatar[0].originFileObj) {
+      try {
+        const base64 = await getBase64(avatar[0].originFileObj);
+        localStorage.setItem("cv_avatar", base64);
+      } catch (err) {
+        console.error("Error converting avatar to Base64", err);
+      }
+    } else if (!avatar || avatar.length === 0) {
+      localStorage.removeItem("cv_avatar");
+    } else if (avatar && avatar.length > 0 && avatar[0].url) {
+      // Keep existing avatar URL if it wasn't changed
+      localStorage.setItem("cv_avatar", avatar[0].url);
+    }
+
     if (onSubmit) {
       onSubmit(values);
     } else {
       window.location.href = "/preview";
     }
   };
+
+  const avatarFile = Form.useWatch("avatar", form);
+
+  const avatarPreview = React.useMemo(() => {
+    if (avatarFile && avatarFile.length > 0) {
+      const fileEntry = avatarFile[0];
+      if (fileEntry.url) {
+        return fileEntry.url;
+      }
+      if (fileEntry.originFileObj) {
+        return URL.createObjectURL(fileEntry.originFileObj);
+      }
+    }
+    return null;
+  }, [avatarFile]);
+
+  // Clean up object URLs to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (avatarPreview && avatarPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+    };
+  }, [avatarPreview]);
 
   return (
     <div className="submit-cv-container">
@@ -108,7 +197,8 @@ const SubmitCVForm = ({ onSubmit }) => {
             <div className="submit-cv-avatar-container">
               <Avatar
                 size={100}
-                icon={<UserOutlined />}
+                icon={!avatarPreview && <UserOutlined />}
+                src={avatarPreview}
                 className="submit-cv-avatar"
               />
               <br />
@@ -205,7 +295,7 @@ const SubmitCVForm = ({ onSubmit }) => {
                     { required: true, message: "Vui lòng nhập số điện thoại!" },
                   ]}
                 >
-                  <Input size="large" placeholder="0901234567" />
+                  <Input size="large" placeholder="Nhập số điện thoại" />
                 </Form.Item>
               </Col>
               <Col xs={24} sm={8}>
