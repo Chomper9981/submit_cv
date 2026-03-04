@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import {
   Form,
   Input,
@@ -30,8 +30,11 @@ const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 const SubmitCVForm = ({ onSubmit }) => {
+  // Khởi tạo instance của form trong hệ sinh thái Ant Design
   const [form] = Form.useForm();
 
+  // Lifecycle useEffect này chỉ chạy 1 lần duy nhất khi file này vừa được gắn (mount) lên giao diện
+  // Nhiệm vụ: Quét tìm trong trình duyệt xem liệu người dùng đã từng điền Form chưa, nếu có thì hồi sinh đoạn dữ liệu đó lên Form
   useEffect(() => {
     const storedData = localStorage.getItem("cv_data");
     const storedAvatar = localStorage.getItem("cv_avatar");
@@ -58,12 +61,17 @@ const SubmitCVForm = ({ onSubmit }) => {
     }
   }, [form]);
 
+  // Hàm thực thi khi nút "Làm mới CV" được nhấn
+  // Nhiệm vụ là xóa trắng mọi token rác trên trình duyệt và reset field trên Form
   const handleResetCV = () => {
     localStorage.removeItem("cv_data");
     localStorage.removeItem("cv_avatar");
     form.resetFields();
   };
 
+  // Hàm chuyển đổi hình ảnh tải lên thành mã ký tự siêu dài (Base 64 Encode)
+  // Đặc biệt: Hàm này chèn thẻ <canvas> để có thể làm hẹp kích thước của ảnh xuống đúng khung 300x300.
+  // Qua đó ép size ảnh từ Megabytes xuống mức ~ vài Kilobytes, lách hạn mức dung lượng cấm (5M) của Trình duyệt.
   const getBase64 = (file) =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -101,7 +109,10 @@ const SubmitCVForm = ({ onSubmit }) => {
       reader.onerror = (error) => reject(error);
     });
 
+  // Hàm thực thi khi người dùng bấm Submit / Xem Trước CV và không có trường đỏ (Lỗi Validation) nào bị dính lại
   const onFinish = async (values) => {
+    // Tách riêng file ảnh ra, vì các tệp tin object File từ thẻ Upload
+    // không thể lưu được vào chuỗi JSON bằng phương pháp thông thường.
     const { avatar, ...cvDataWithoutAvatar } = values;
     localStorage.setItem("cv_data", JSON.stringify(cvDataWithoutAvatar));
 
@@ -126,9 +137,12 @@ const SubmitCVForm = ({ onSubmit }) => {
     }
   };
 
+  // Theo dõi Live thay đổi (Sự kiện khi bạn vừa nhấn Open trên popup Upload File thì field này lập tức nhận kết quả)
   const avatarFile = Form.useWatch("avatar", form);
 
-  const avatarPreview = React.useMemo(() => {
+  // Tạo Preview (Xem trước ảnh tạm bằng Memoization - UseMemo)
+  // React sẽ chỉ render lại khung ảnh khi có hình mới, tối ưu hiệu suất, bỏ qua các re-render không cần thiết khác
+  const avatarPreview = useMemo(() => {
     if (avatarFile && avatarFile.length > 0) {
       const fileEntry = avatarFile[0];
       if (fileEntry.url) {
@@ -141,7 +155,8 @@ const SubmitCVForm = ({ onSubmit }) => {
     return null;
   }, [avatarFile]);
 
-  // Clean up object URLs to prevent memory leaks
+  // Rất quan trọng: Xóa rác và giải phóng bộ nhớ ảo (memory leaks)
+  // Tính năng ObjectURL tạo các liên kết giả lập, khi component bị bỏ đi mình cần thông báo dọn dẹp biến tạm thời.
   useEffect(() => {
     return () => {
       if (avatarPreview && avatarPreview.startsWith("blob:")) {
@@ -233,7 +248,7 @@ const SubmitCVForm = ({ onSubmit }) => {
                     { required: true, message: "Vui lòng nhập họ và tên!" },
                   ]}
                 >
-                  <Input size="large" placeholder="Đinh Xuân Thảo" />
+                  <Input size="large" placeholder="Nhập họ và tên" />
                 </Form.Item>
               </Col>
               <Col xs={24} sm={12}>
@@ -247,7 +262,7 @@ const SubmitCVForm = ({ onSubmit }) => {
                     },
                   ]}
                 >
-                  <Input size="large" placeholder="Product Manager" />
+                  <Input size="large" placeholder="Nhập vị trí ứng tuyển" />
                 </Form.Item>
               </Col>
             </Row>
@@ -278,10 +293,7 @@ const SubmitCVForm = ({ onSubmit }) => {
                     { required: true, message: "Vui lòng nhập địa chỉ!" },
                   ]}
                 >
-                  <Input
-                    size="large"
-                    placeholder="Nguyễn Đình Chiểu, Phường 5, Quận 3"
-                  />
+                  <Input size="large" placeholder="Nhập địa chỉ" />
                 </Form.Item>
               </Col>
             </Row>
@@ -336,7 +348,7 @@ const SubmitCVForm = ({ onSubmit }) => {
             >
               <TextArea
                 rows={4}
-                placeholder="Với hơn hai năm kinh nghiệm ở các vị trí Product Manager..."
+                placeholder="Giới thiệu về bản thân ngắn gọn, tổng quát"
               />
             </Form.Item>
 
@@ -393,12 +405,12 @@ const SubmitCVForm = ({ onSubmit }) => {
                             name={[field.name, "startDate"]}
                             label="Từ"
                           >
-                            <Input placeholder="03/2017" />
+                            <Input placeholder="Nhập ngày bắt đầu" />
                           </Form.Item>
                         </Col>
                         <Col xs={12}>
                           <Form.Item name={[field.name, "endDate"]} label="Đến">
-                            <Input placeholder="03/2018" />
+                            <Input placeholder="Nhập ngày kết thúc" />
                           </Form.Item>
                         </Col>
                       </Row>
@@ -408,7 +420,7 @@ const SubmitCVForm = ({ onSubmit }) => {
                       >
                         <TextArea
                           rows={3}
-                          placeholder="- Cung cấp thông tin, định hướng..."
+                          placeholder="- Cung cấp thông tin chi tiết..."
                         />
                       </Form.Item>
                     </Card>
@@ -458,7 +470,7 @@ const SubmitCVForm = ({ onSubmit }) => {
                               },
                             ]}
                           >
-                            <Input placeholder="Thạc sỹ Quản trị Kinh doanh" />
+                            <Input placeholder="Nhập bằng cấp / chuyên ngành" />
                           </Form.Item>
                         </Col>
                         <Col xs={24} sm={12}>
@@ -466,7 +478,7 @@ const SubmitCVForm = ({ onSubmit }) => {
                             name={[field.name, "school"]}
                             label="Trường"
                           >
-                            <Input placeholder="Đại học Kinh tế" />
+                            <Input placeholder="Nhập tên trường" />
                           </Form.Item>
                         </Col>
                       </Row>
@@ -476,12 +488,12 @@ const SubmitCVForm = ({ onSubmit }) => {
                             name={[field.name, "startDate"]}
                             label="Từ"
                           >
-                            <Input placeholder="01/2016" />
+                            <Input placeholder="Nhập ngày bắt đầu" />
                           </Form.Item>
                         </Col>
                         <Col xs={12}>
                           <Form.Item name={[field.name, "endDate"]} label="Đến">
-                            <Input placeholder="12/2018" />
+                            <Input placeholder="Nhập ngày kết thúc" />
                           </Form.Item>
                         </Col>
                       </Row>
@@ -594,7 +606,7 @@ const SubmitCVForm = ({ onSubmit }) => {
                             name={[field.name, "date"]}
                             label="Thời gian"
                           >
-                            <Input placeholder="12/2022" />
+                            <Input placeholder="Nhập thời điểm hoàn thành chứng chỉ" />
                           </Form.Item>
                         </Col>
                       </Row>
@@ -703,7 +715,7 @@ const SubmitCVForm = ({ onSubmit }) => {
                             name={[field.name, "phone"]}
                             label="Điện thoại"
                           >
-                            <Input placeholder="0901234567" />
+                            <Input placeholder="Nhập số điện thoại" />
                           </Form.Item>
                         </Col>
                         <Col xs={12}>
@@ -759,7 +771,7 @@ const SubmitCVForm = ({ onSubmit }) => {
                               },
                             ]}
                           >
-                            <Input placeholder="Hệ thống quản lý bán hàng" />
+                            <Input placeholder="Nhập tên dự án" />
                           </Form.Item>
                         </Col>
                         <Col xs={24} sm={12}>
@@ -777,12 +789,12 @@ const SubmitCVForm = ({ onSubmit }) => {
                             name={[field.name, "startDate"]}
                             label="Từ"
                           >
-                            <Input placeholder="01/2023" />
+                            <Input placeholder="Nhập ngày bắt đầu" />
                           </Form.Item>
                         </Col>
                         <Col xs={12}>
                           <Form.Item name={[field.name, "endDate"]} label="Đến">
-                            <Input placeholder="06/2023" />
+                            <Input placeholder="Nhập ngày kết thúc" />
                           </Form.Item>
                         </Col>
                       </Row>
