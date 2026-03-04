@@ -28,35 +28,46 @@ const PreviewCV = ({ data }) => {
   });
 
   const cvData = data || localData;
+
+  // Ref để trỏ vào div bọc toàn bộ nội dung hiển thị của CV (div này sẽ là đối tượng để chụp ảnh xuất PDF)
   const cvRef = useRef(null);
 
   const handleExportPDF = async () => {
     if (!cvRef.current) return;
 
     try {
-      // Temporarily hide the actions buttons before generating PDF
+      // 1. Ẩn khối UI chứa các nút thao tác ("Chỉnh sửa", "Xuất PDF") để chúng không bị in dính vào file PDF
       const actionsElement = document.querySelector(".preview-cv-actions");
       if (actionsElement) actionsElement.style.display = "none";
 
+      // 2. Chụp ảnh nội dung element cvRef.current bằng thư viện html2canvas
       const canvas = await html2canvas(cvRef.current, {
-        scale: 2, // Higher scale for better quality
-        useCORS: true,
+        scale: 2, // Hệ số scale = 2 giúp tăng độ phân giải, làm văn bản/ảnh trông nét hơn trong PDF
+        useCORS: true, // Cho phép tải các tài nguyên (như ảnh avatar) từ domain khác (cross-origin)
         logging: false,
       });
 
+      // 3. Khôi phục lại hiển thị của các nút bấm sau khi quá trình capture hình ảnh hoàn tất
       if (actionsElement) actionsElement.style.display = "flex";
 
+      // 4. Chuyển đổi canvas thu được sang dạng base64 string (định dạng PNG)
       const imgData = canvas.toDataURL("image/png");
+
+      // 5. Khởi tạo đối tượng jsPDF
       const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
+        orientation: "portrait", // Thiết lập khổ dọc
+        unit: "mm", // Sử dụng đơn vị đo chuẩn là milimet
+        format: "a4", // Sử dụng cỡ giấy A4
       });
 
+      // 6. Tính toán tỉ lệ kích thước ảnh để đặt vừa in vào khổ giấy A4
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
+      // 7. Chèn ảnh nội dung bản CV vào trang PDF, bắt đầu ở toạ độ x=0, y=0
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+
+      // 8. Tự động bật hộp thoại tải file xuống ở browser cho người dùng
       pdf.save(`${cvData?.fullName || "CV"}_Resume.pdf`);
     } catch (error) {
       console.error("Error exporting PDF:", error);

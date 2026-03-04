@@ -30,11 +30,8 @@ const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 const SubmitCVForm = ({ onSubmit }) => {
-  // Khởi tạo instance của form trong hệ sinh thái Ant Design
   const [form] = Form.useForm();
 
-  // Lifecycle useEffect này chỉ chạy 1 lần duy nhất khi file này vừa được gắn (mount) lên giao diện
-  // Nhiệm vụ: Quét tìm trong trình duyệt xem liệu người dùng đã từng điền Form chưa, nếu có thì hồi sinh đoạn dữ liệu đó lên Form
   useEffect(() => {
     const storedData = localStorage.getItem("cv_data");
     const storedAvatar = localStorage.getItem("cv_avatar");
@@ -61,15 +58,13 @@ const SubmitCVForm = ({ onSubmit }) => {
     }
   }, [form]);
 
-  // Hàm thực thi khi nút "Làm mới CV" được nhấn
-  // Nhiệm vụ là xóa trắng mọi token rác trên trình duyệt và reset field trên Form
   const handleResetCV = () => {
     localStorage.removeItem("cv_data");
     localStorage.removeItem("cv_avatar");
     form.resetFields();
   };
 
-  // Hàm chuyển đổi hình ảnh tải lên thành mã ký tự siêu dài (Base 64 Encode)
+  // Hàm chuyển đổi hình ảnh tải lên thành mã ký tự (Base 64 Encode)
   // Đặc biệt: Hàm này chèn thẻ <canvas> để có thể làm hẹp kích thước của ảnh xuống đúng khung 300x300.
   // Qua đó ép size ảnh từ Megabytes xuống mức ~ vài Kilobytes, lách hạn mức dung lượng cấm (5M) của Trình duyệt.
   const getBase64 = (file) =>
@@ -109,7 +104,6 @@ const SubmitCVForm = ({ onSubmit }) => {
       reader.onerror = (error) => reject(error);
     });
 
-  // Hàm thực thi khi người dùng bấm Submit / Xem Trước CV và không có trường đỏ (Lỗi Validation) nào bị dính lại
   const onFinish = async (values) => {
     // Tách riêng file ảnh ra, vì các tệp tin object File từ thẻ Upload
     // không thể lưu được vào chuỗi JSON bằng phương pháp thông thường.
@@ -126,7 +120,6 @@ const SubmitCVForm = ({ onSubmit }) => {
     } else if (!avatar || avatar.length === 0) {
       localStorage.removeItem("cv_avatar");
     } else if (avatar && avatar.length > 0 && avatar[0].url) {
-      // Keep existing avatar URL if it wasn't changed
       localStorage.setItem("cv_avatar", avatar[0].url);
     }
 
@@ -134,6 +127,17 @@ const SubmitCVForm = ({ onSubmit }) => {
       onSubmit(values);
     } else {
       window.location.href = "/preview";
+    }
+  };
+
+  // Focus và cuộn giao diện đến field bị dính lỗi validate đầu tiên khi người dùng bấm Submit
+  const onFinishFailed = (errorInfo) => {
+    const errorField = errorInfo.errorFields[0];
+    if (errorField) {
+      form.scrollToField(errorField.name, {
+        behavior: "smooth",
+        block: "center",
+      });
     }
   };
 
@@ -196,6 +200,7 @@ const SubmitCVForm = ({ onSubmit }) => {
             form={form}
             layout="vertical"
             onFinish={onFinish}
+            onFinishFailed={onFinishFailed}
             initialValues={{
               workExperiences: [{}],
               education: [{}],
