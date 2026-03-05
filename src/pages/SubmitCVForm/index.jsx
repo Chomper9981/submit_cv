@@ -41,6 +41,21 @@ const SubmitCVForm = ({ onSubmit }) => {
         if (parsedData.dateOfBirth) {
           parsedData.dateOfBirth = dayjs(parsedData.dateOfBirth);
         }
+        ["workExperiences", "education", "projects"].forEach((key) => {
+          if (Array.isArray(parsedData[key])) {
+            parsedData[key] = parsedData[key].map((item) => ({
+              ...item,
+              startDate: item.startDate ? dayjs(item.startDate) : undefined,
+              endDate: item.endDate ? dayjs(item.endDate) : undefined,
+            }));
+          }
+        });
+        if (Array.isArray(parsedData.certificates)) {
+          parsedData.certificates = parsedData.certificates.map((item) => ({
+            ...item,
+            date: item.date ? dayjs(item.date) : undefined,
+          }));
+        }
         if (storedAvatar) {
           parsedData.avatar = [
             {
@@ -141,11 +156,9 @@ const SubmitCVForm = ({ onSubmit }) => {
     }
   };
 
-  // Theo dõi Live thay đổi (Sự kiện khi bạn vừa nhấn Open trên popup Upload File thì field này lập tức nhận kết quả)
   const avatarFile = Form.useWatch("avatar", form);
 
   // Tạo Preview (Xem trước ảnh tạm bằng Memoization - UseMemo)
-  // React sẽ chỉ render lại khung ảnh khi có hình mới, tối ưu hiệu suất, bỏ qua các re-render không cần thiết khác
   const avatarPreview = useMemo(() => {
     if (avatarFile && avatarFile.length > 0) {
       const fileEntry = avatarFile[0];
@@ -250,7 +263,15 @@ const SubmitCVForm = ({ onSubmit }) => {
                   label="Họ và tên"
                   name="fullName"
                   rules={[
-                    { required: true, message: "Vui lòng nhập họ và tên!" },
+                    {
+                      required: true,
+                      message: "Vui lòng nhập họ và tên!",
+                      whitespace: true,
+                    },
+                    {
+                      pattern: /^[\p{L}\s]+$/u,
+                      message: "Họ và tên không được chứa kí tự đặc biệt!",
+                    },
                   ]}
                 >
                   <Input size="large" placeholder="Nhập họ và tên" />
@@ -262,8 +283,14 @@ const SubmitCVForm = ({ onSubmit }) => {
                   name="jobTitle"
                   rules={[
                     {
+                      whitespace: true,
                       required: true,
                       message: "Vui lòng nhập vị trí ứng tuyển!",
+                    },
+                    {
+                      pattern: /^["\p{L}\s]+$/u,
+                      message:
+                        "Vị trí ứng tuyển không được chứa kí tự đặc biệt!",
                     },
                   ]}
                 >
@@ -295,7 +322,11 @@ const SubmitCVForm = ({ onSubmit }) => {
                   label="Địa chỉ"
                   name="address"
                   rules={[
-                    { required: true, message: "Vui lòng nhập địa chỉ!" },
+                    {
+                      required: true,
+                      message: "Vui lòng nhập địa chỉ!",
+                      whitespace: true,
+                    },
                   ]}
                 >
                   <Input size="large" placeholder="Nhập địa chỉ" />
@@ -309,7 +340,15 @@ const SubmitCVForm = ({ onSubmit }) => {
                   label="Số điện thoại"
                   name="phone"
                   rules={[
-                    { required: true, message: "Vui lòng nhập số điện thoại!" },
+                    {
+                      required: true,
+                      message: "Vui lòng nhập số điện thoại!",
+                      whitespace: true,
+                    },
+                    {
+                      pattern: /^[0-9]{10}$/,
+                      message: "Số điện thoại phải có 10 chữ số!",
+                    },
                   ]}
                 >
                   <Input size="large" placeholder="Nhập số điện thoại" />
@@ -324,6 +363,7 @@ const SubmitCVForm = ({ onSubmit }) => {
                       required: true,
                       type: "email",
                       message: "Vui lòng nhập email hợp lệ!",
+                      whitespace: true,
                     },
                   ]}
                 >
@@ -331,7 +371,16 @@ const SubmitCVForm = ({ onSubmit }) => {
                 </Form.Item>
               </Col>
               <Col xs={24} sm={8}>
-                <Form.Item label="Facebook" name="facebook">
+                <Form.Item
+                  label="Địa chỉ mạng xã hội"
+                  name="social"
+                  rules={[
+                    {
+                      whitespace: true,
+                      message: "Vui lòng nhập nội dung hợp lệ!",
+                    },
+                  ]}
+                >
                   <Input size="large" placeholder="facebook.com/yourname" />
                 </Form.Item>
               </Col>
@@ -348,6 +397,7 @@ const SubmitCVForm = ({ onSubmit }) => {
                 {
                   required: true,
                   message: "Vui lòng nhập giới thiệu bản thân!",
+                  whitespace: true,
                 },
               ]}
             >
@@ -389,6 +439,7 @@ const SubmitCVForm = ({ onSubmit }) => {
                               {
                                 required: true,
                                 message: "Vui lòng nhập vị trí!",
+                                whitespace: true,
                               },
                             ]}
                           >
@@ -399,6 +450,12 @@ const SubmitCVForm = ({ onSubmit }) => {
                           <Form.Item
                             name={[field.name, "company"]}
                             label="Công ty"
+                            rules={[
+                              {
+                                whitespace: true,
+                                message: "Vui lòng nhập nội dung hợp lệ!",
+                              },
+                            ]}
                           >
                             <Input placeholder="Tên công ty" />
                           </Form.Item>
@@ -410,18 +467,34 @@ const SubmitCVForm = ({ onSubmit }) => {
                             name={[field.name, "startDate"]}
                             label="Từ"
                           >
-                            <Input placeholder="Nhập ngày bắt đầu" />
+                            <DatePicker
+                              picker="month"
+                              format="MM/YYYY"
+                              placeholder="Chọn tháng/năm"
+                              className="submit-cv-date-picker"
+                            />
                           </Form.Item>
                         </Col>
                         <Col xs={12}>
                           <Form.Item name={[field.name, "endDate"]} label="Đến">
-                            <Input placeholder="Nhập ngày kết thúc" />
+                            <DatePicker
+                              picker="month"
+                              format="MM/YYYY"
+                              placeholder="Chọn tháng/năm"
+                              className="submit-cv-date-picker"
+                            />
                           </Form.Item>
                         </Col>
                       </Row>
                       <Form.Item
                         name={[field.name, "details"]}
                         label="Chi tiết công việc"
+                        rules={[
+                          {
+                            whitespace: true,
+                            message: "Vui lòng nhập nội dung hợp lệ!",
+                          },
+                        ]}
                       >
                         <TextArea
                           rows={3}
@@ -430,14 +503,31 @@ const SubmitCVForm = ({ onSubmit }) => {
                       </Form.Item>
                     </Card>
                   ))}
-                  <Button
-                    type="dashed"
-                    block
-                    icon={<PlusOutlined />}
-                    onClick={() => add()}
-                  >
-                    Thêm kinh nghiệm
-                  </Button>
+                  <Form.Item shouldUpdate>
+                    {() => {
+                      const values =
+                        form.getFieldValue("workExperiences") || [];
+                      const isComplete = values.every(
+                        (item) =>
+                          item?.position?.trim() &&
+                          item?.company?.trim() &&
+                          item?.startDate &&
+                          item?.endDate &&
+                          item?.details?.trim(),
+                      );
+                      return (
+                        <Button
+                          type="dashed"
+                          block
+                          icon={<PlusOutlined />}
+                          onClick={() => add()}
+                          disabled={!isComplete}
+                        >
+                          Thêm kinh nghiệm
+                        </Button>
+                      );
+                    }}
+                  </Form.Item>
                 </>
               )}
             </Form.List>
@@ -472,6 +562,7 @@ const SubmitCVForm = ({ onSubmit }) => {
                               {
                                 required: true,
                                 message: "Vui lòng nhập bằng cấp!",
+                                whitespace: true,
                               },
                             ]}
                           >
@@ -482,6 +573,12 @@ const SubmitCVForm = ({ onSubmit }) => {
                           <Form.Item
                             name={[field.name, "school"]}
                             label="Trường"
+                            rules={[
+                              {
+                                whitespace: true,
+                                message: "Vui lòng nhập nội dung hợp lệ!",
+                              },
+                            ]}
                           >
                             <Input placeholder="Nhập tên trường" />
                           </Form.Item>
@@ -493,18 +590,34 @@ const SubmitCVForm = ({ onSubmit }) => {
                             name={[field.name, "startDate"]}
                             label="Từ"
                           >
-                            <Input placeholder="Nhập ngày bắt đầu" />
+                            <DatePicker
+                              picker="month"
+                              format="MM/YYYY"
+                              placeholder="Chọn tháng/năm"
+                              className="submit-cv-date-picker"
+                            />
                           </Form.Item>
                         </Col>
                         <Col xs={12}>
                           <Form.Item name={[field.name, "endDate"]} label="Đến">
-                            <Input placeholder="Nhập ngày kết thúc" />
+                            <DatePicker
+                              picker="month"
+                              format="MM/YYYY"
+                              placeholder="Chọn tháng/năm"
+                              className="submit-cv-date-picker"
+                            />
                           </Form.Item>
                         </Col>
                       </Row>
                       <Form.Item
                         name={[field.name, "details"]}
                         label="Chi tiết"
+                        rules={[
+                          {
+                            whitespace: true,
+                            message: "Vui lòng nhập nội dung hợp lệ!",
+                          },
+                        ]}
                       >
                         <TextArea
                           rows={2}
@@ -513,14 +626,30 @@ const SubmitCVForm = ({ onSubmit }) => {
                       </Form.Item>
                     </Card>
                   ))}
-                  <Button
-                    type="dashed"
-                    block
-                    icon={<PlusOutlined />}
-                    onClick={() => add()}
-                  >
-                    Thêm học vấn
-                  </Button>
+                  <Form.Item shouldUpdate>
+                    {() => {
+                      const values = form.getFieldValue("education") || [];
+                      const isComplete = values.every(
+                        (item) =>
+                          item?.degree?.trim() &&
+                          item?.school?.trim() &&
+                          item?.startDate &&
+                          item?.endDate &&
+                          item?.details?.trim(),
+                      );
+                      return (
+                        <Button
+                          type="dashed"
+                          block
+                          icon={<PlusOutlined />}
+                          onClick={() => add()}
+                          disabled={!isComplete}
+                        >
+                          Thêm học vấn
+                        </Button>
+                      );
+                    }}
+                  </Form.Item>
                 </>
               )}
             </Form.List>
@@ -540,7 +669,16 @@ const SubmitCVForm = ({ onSubmit }) => {
                       key={field.key}
                     >
                       <Col xs={10} sm={8}>
-                        <Form.Item name={[field.name, "name"]} noStyle>
+                        <Form.Item
+                          name={[field.name, "name"]}
+                          noStyle
+                          rules={[
+                            {
+                              whitespace: true,
+                              message: "Vui lòng nhập nội dung hợp lệ!",
+                            },
+                          ]}
+                        >
                           <Input placeholder="Tiếng Anh" />
                         </Form.Item>
                       </Col>
@@ -563,15 +701,27 @@ const SubmitCVForm = ({ onSubmit }) => {
                       </Col>
                     </Row>
                   ))}
-                  <Button
-                    type="dashed"
-                    block
-                    icon={<PlusOutlined />}
-                    onClick={() => add()}
-                    className="submit-cv-add-btn-margin"
-                  >
-                    Thêm kỹ năng
-                  </Button>
+                  <Form.Item shouldUpdate>
+                    {() => {
+                      const values = form.getFieldValue("skills") || [];
+                      const isComplete = values.every(
+                        (item) =>
+                          item?.name?.trim() && item?.level !== undefined,
+                      );
+                      return (
+                        <Button
+                          type="dashed"
+                          block
+                          icon={<PlusOutlined />}
+                          onClick={() => add()}
+                          disabled={!isComplete}
+                          className="submit-cv-add-btn-margin"
+                        >
+                          Thêm kỹ năng
+                        </Button>
+                      );
+                    }}
+                  </Form.Item>
                 </>
               )}
             </Form.List>
@@ -602,6 +752,12 @@ const SubmitCVForm = ({ onSubmit }) => {
                           <Form.Item
                             name={[field.name, "name"]}
                             label="Tên chứng chỉ"
+                            rules={[
+                              {
+                                whitespace: true,
+                                message: "Vui lòng nhập nội dung hợp lệ!",
+                              },
+                            ]}
                           >
                             <Input placeholder="TOEIC 850" />
                           </Form.Item>
@@ -611,13 +767,24 @@ const SubmitCVForm = ({ onSubmit }) => {
                             name={[field.name, "date"]}
                             label="Thời gian"
                           >
-                            <Input placeholder="Nhập thời điểm hoàn thành chứng chỉ" />
+                            <DatePicker
+                              picker="month"
+                              format="MM/YYYY"
+                              placeholder="Chọn tháng/năm"
+                              className="submit-cv-date-picker"
+                            />
                           </Form.Item>
                         </Col>
                       </Row>
                       <Form.Item
                         name={[field.name, "details"]}
                         label="Chi tiết"
+                        rules={[
+                          {
+                            whitespace: true,
+                            message: "Vui lòng nhập nội dung hợp lệ!",
+                          },
+                        ]}
                       >
                         <TextArea
                           rows={2}
@@ -626,14 +793,28 @@ const SubmitCVForm = ({ onSubmit }) => {
                       </Form.Item>
                     </Card>
                   ))}
-                  <Button
-                    type="dashed"
-                    block
-                    icon={<PlusOutlined />}
-                    onClick={() => add()}
-                  >
-                    Thêm chứng chỉ
-                  </Button>
+                  <Form.Item shouldUpdate>
+                    {() => {
+                      const values = form.getFieldValue("certificates") || [];
+                      const isComplete = values.every(
+                        (item) =>
+                          item?.name?.trim() &&
+                          item?.date &&
+                          item?.details?.trim(),
+                      );
+                      return (
+                        <Button
+                          type="dashed"
+                          block
+                          icon={<PlusOutlined />}
+                          onClick={() => add()}
+                          disabled={!isComplete}
+                        >
+                          Thêm chứng chỉ
+                        </Button>
+                      );
+                    }}
+                  </Form.Item>
                 </>
               )}
             </Form.List>
@@ -645,6 +826,9 @@ const SubmitCVForm = ({ onSubmit }) => {
             <Form.Item
               name="languages"
               label="Ngôn ngữ (cách nhau bằng dấu phẩy)"
+              rules={[
+                { whitespace: true, message: "Vui lòng nhập nội dung hợp lệ!" },
+              ]}
             >
               <Input
                 size="large"
@@ -656,7 +840,13 @@ const SubmitCVForm = ({ onSubmit }) => {
             <Divider titlePlacement="left" className="submit-cv-divider-margin">
               <span className="submit-cv-divider-text">🏆 Giải thưởng</span>
             </Divider>
-            <Form.Item name="awards" label="Giải thưởng">
+            <Form.Item
+              name="awards"
+              label="Giải thưởng"
+              rules={[
+                { whitespace: true, message: "Vui lòng nhập nội dung hợp lệ!" },
+              ]}
+            >
               <TextArea rows={2} placeholder="Giải nhất cuộc thi..." />
             </Form.Item>
 
@@ -664,7 +854,13 @@ const SubmitCVForm = ({ onSubmit }) => {
             <Divider titlePlacement="left" className="submit-cv-divider-margin">
               <span className="submit-cv-divider-text">❤️ Điều quan tâm</span>
             </Divider>
-            <Form.Item name="interests" label="Sở thích / Điều quan tâm">
+            <Form.Item
+              name="interests"
+              label="Sở thích / Điều quan tâm"
+              rules={[
+                { whitespace: true, message: "Vui lòng nhập nội dung hợp lệ!" },
+              ]}
+            >
               <TextArea rows={2} placeholder="Đọc sách, du lịch..." />
             </Form.Item>
 
@@ -672,7 +868,13 @@ const SubmitCVForm = ({ onSubmit }) => {
             <Divider titlePlacement="left" className="submit-cv-divider-margin">
               <span className="submit-cv-divider-text">🎯 Hoạt động</span>
             </Divider>
-            <Form.Item name="activities" label="Hoạt động ngoại khóa">
+            <Form.Item
+              name="activities"
+              label="Hoạt động ngoại khóa"
+              rules={[
+                { whitespace: true, message: "Vui lòng nhập nội dung hợp lệ!" },
+              ]}
+            >
               <TextArea rows={2} placeholder="Tình nguyện viên..." />
             </Form.Item>
 
@@ -701,7 +903,16 @@ const SubmitCVForm = ({ onSubmit }) => {
                     >
                       <Row gutter={12}>
                         <Col xs={24} sm={12}>
-                          <Form.Item name={[field.name, "name"]} label="Họ tên">
+                          <Form.Item
+                            name={[field.name, "name"]}
+                            label="Họ tên"
+                            rules={[
+                              {
+                                whitespace: true,
+                                message: "Vui lòng nhập nội dung hợp lệ!",
+                              },
+                            ]}
+                          >
                             <Input placeholder="Nguyễn Văn A" />
                           </Form.Item>
                         </Col>
@@ -709,6 +920,12 @@ const SubmitCVForm = ({ onSubmit }) => {
                           <Form.Item
                             name={[field.name, "position"]}
                             label="Chức vụ"
+                            rules={[
+                              {
+                                whitespace: true,
+                                message: "Vui lòng nhập nội dung hợp lệ!",
+                              },
+                            ]}
                           >
                             <Input placeholder="CTO - Công ty ABC" />
                           </Form.Item>
@@ -719,26 +936,56 @@ const SubmitCVForm = ({ onSubmit }) => {
                           <Form.Item
                             name={[field.name, "phone"]}
                             label="Điện thoại"
+                            rules={[
+                              {
+                                whitespace: true,
+                                message: "Vui lòng nhập nội dung hợp lệ!",
+                              },
+                            ]}
                           >
                             <Input placeholder="Nhập số điện thoại" />
                           </Form.Item>
                         </Col>
                         <Col xs={12}>
-                          <Form.Item name={[field.name, "email"]} label="Email">
+                          <Form.Item
+                            name={[field.name, "email"]}
+                            label="Email"
+                            rules={[
+                              {
+                                whitespace: true,
+                                message: "Vui lòng nhập nội dung hợp lệ!",
+                              },
+                            ]}
+                          >
                             <Input placeholder="email@company.com" />
                           </Form.Item>
                         </Col>
                       </Row>
                     </Card>
                   ))}
-                  <Button
-                    type="dashed"
-                    block
-                    icon={<PlusOutlined />}
-                    onClick={() => add()}
-                  >
-                    Thêm người tham chiếu
-                  </Button>
+                  <Form.Item shouldUpdate>
+                    {() => {
+                      const values = form.getFieldValue("references") || [];
+                      const isComplete = values.every(
+                        (item) =>
+                          item?.name?.trim() &&
+                          item?.position?.trim() &&
+                          item?.phone?.trim() &&
+                          item?.email?.trim(),
+                      );
+                      return (
+                        <Button
+                          type="dashed"
+                          block
+                          icon={<PlusOutlined />}
+                          onClick={() => add()}
+                          disabled={!isComplete}
+                        >
+                          Thêm người tham chiếu
+                        </Button>
+                      );
+                    }}
+                  </Form.Item>
                 </>
               )}
             </Form.List>
@@ -773,6 +1020,7 @@ const SubmitCVForm = ({ onSubmit }) => {
                               {
                                 required: true,
                                 message: "Vui lòng nhập tên dự án!",
+                                whitespace: true,
                               },
                             ]}
                           >
@@ -783,6 +1031,12 @@ const SubmitCVForm = ({ onSubmit }) => {
                           <Form.Item
                             name={[field.name, "role"]}
                             label="Vai trò"
+                            rules={[
+                              {
+                                whitespace: true,
+                                message: "Vui lòng nhập nội dung hợp lệ!",
+                              },
+                            ]}
                           >
                             <Input placeholder="Team Leader / Developer" />
                           </Form.Item>
@@ -794,24 +1048,46 @@ const SubmitCVForm = ({ onSubmit }) => {
                             name={[field.name, "startDate"]}
                             label="Từ"
                           >
-                            <Input placeholder="Nhập ngày bắt đầu" />
+                            <DatePicker
+                              picker="month"
+                              format="MM/YYYY"
+                              placeholder="Chọn tháng/năm"
+                              className="submit-cv-date-picker"
+                            />
                           </Form.Item>
                         </Col>
                         <Col xs={12}>
                           <Form.Item name={[field.name, "endDate"]} label="Đến">
-                            <Input placeholder="Nhập ngày kết thúc" />
+                            <DatePicker
+                              picker="month"
+                              format="MM/YYYY"
+                              placeholder="Chọn tháng/năm"
+                              className="submit-cv-date-picker"
+                            />
                           </Form.Item>
                         </Col>
                       </Row>
                       <Form.Item
                         name={[field.name, "technologies"]}
                         label="Công nghệ sử dụng"
+                        rules={[
+                          {
+                            whitespace: true,
+                            message: "Vui lòng nhập nội dung hợp lệ!",
+                          },
+                        ]}
                       >
                         <Input placeholder="React, Node.js, PostgreSQL..." />
                       </Form.Item>
                       <Form.Item
                         name={[field.name, "description"]}
                         label="Mô tả dự án"
+                        rules={[
+                          {
+                            whitespace: true,
+                            message: "Vui lòng nhập nội dung hợp lệ!",
+                          },
+                        ]}
                       >
                         <TextArea
                           rows={3}
@@ -820,14 +1096,31 @@ const SubmitCVForm = ({ onSubmit }) => {
                       </Form.Item>
                     </Card>
                   ))}
-                  <Button
-                    type="dashed"
-                    block
-                    icon={<PlusOutlined />}
-                    onClick={() => add()}
-                  >
-                    Thêm dự án
-                  </Button>
+                  <Form.Item shouldUpdate>
+                    {() => {
+                      const values = form.getFieldValue("projects") || [];
+                      const isComplete = values.every(
+                        (item) =>
+                          item?.name?.trim() &&
+                          item?.role?.trim() &&
+                          item?.startDate &&
+                          item?.endDate &&
+                          item?.technologies?.trim() &&
+                          item?.description?.trim(),
+                      );
+                      return (
+                        <Button
+                          type="dashed"
+                          block
+                          icon={<PlusOutlined />}
+                          onClick={() => add()}
+                          disabled={!isComplete}
+                        >
+                          Thêm dự án
+                        </Button>
+                      );
+                    }}
+                  </Form.Item>
                 </>
               )}
             </Form.List>

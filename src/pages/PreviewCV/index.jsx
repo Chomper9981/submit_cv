@@ -90,7 +90,7 @@ const PreviewCV = ({ data }) => {
     address = "",
     phone = "",
     email = "",
-    facebook = "",
+    social = "",
     introduction = "",
     workExperiences = [],
     education = [],
@@ -186,12 +186,14 @@ const PreviewCV = ({ data }) => {
                 </div>
               )}
 
-              {facebook && (
+              {social && (
                 <div className="preview-cv-contact-item">
                   <span className="preview-cv-contact-icon">🔗</span>
                   <div>
-                    <div className="preview-cv-contact-label">Facebook</div>
-                    <div className="preview-cv-contact-value">{facebook}</div>
+                    <div className="preview-cv-contact-label">
+                      Địa chỉ mạng xã hội
+                    </div>
+                    <div className="preview-cv-contact-value">{social}</div>
                   </div>
                 </div>
               )}
