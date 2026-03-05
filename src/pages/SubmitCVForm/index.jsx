@@ -485,16 +485,63 @@ const SubmitCVForm = ({ onSubmit }) => {
                               format="MM/YYYY"
                               placeholder="Chọn tháng/năm"
                               className="submit-cv-date-picker"
+                              onChange={() => {
+                                form.setFieldValue(
+                                  ["workExperiences", field.name, "endDate"],
+                                  null,
+                                );
+                              }}
                             />
                           </Form.Item>
                         </Col>
                         <Col xs={12}>
-                          <Form.Item name={[field.name, "endDate"]} label="Đến">
+                          <Form.Item
+                            name={[field.name, "endDate"]}
+                            label="Đến"
+                            dependencies={[[field.name, "startDate"]]}
+                          >
                             <DatePicker
                               picker="month"
                               format="MM/YYYY"
                               placeholder="Chọn tháng/năm"
                               className="submit-cv-date-picker"
+                              onChange={(date) => {
+                                // Lấy giá trị của trường "Từ" (startDate)
+                                const startDate = form.getFieldValue([
+                                  "workExperiences",
+                                  field.name,
+                                  "startDate",
+                                ]);
+
+                                // Kiểm tra nếu có startDate và date được chọn nhỏ hơn startDate
+                                if (
+                                  startDate &&
+                                  date &&
+                                  date < startDate.startOf("month")
+                                ) {
+                                  // Hiển thị cảnh báo cho người dùng
+                                  message.warning(
+                                    'Thời gian "Đến" phải sau hoặc bằng thời gian "Từ"!',
+                                  );
+                                  // Reset trường "Đến" về null
+                                  form.setFieldValue(
+                                    ["workExperiences", field.name, "endDate"],
+                                    null,
+                                  );
+                                }
+                              }}
+                              disabledDate={(current) => {
+                                const startDate = form.getFieldValue([
+                                  "workExperiences",
+                                  field.name,
+                                  "startDate",
+                                ]);
+                                return (
+                                  startDate &&
+                                  current &&
+                                  current < startDate.startOf("month")
+                                );
+                              }}
                             />
                           </Form.Item>
                         </Col>
@@ -608,16 +655,63 @@ const SubmitCVForm = ({ onSubmit }) => {
                               format="MM/YYYY"
                               placeholder="Chọn tháng/năm"
                               className="submit-cv-date-picker"
+                              onChange={() => {
+                                form.setFieldValue(
+                                  ["education", field.name, "endDate"],
+                                  null,
+                                );
+                              }}
                             />
                           </Form.Item>
                         </Col>
                         <Col xs={12}>
-                          <Form.Item name={[field.name, "endDate"]} label="Đến">
+                          <Form.Item
+                            name={[field.name, "endDate"]}
+                            label="Đến"
+                            dependencies={[[field.name, "startDate"]]}
+                          >
                             <DatePicker
                               picker="month"
                               format="MM/YYYY"
                               placeholder="Chọn tháng/năm"
                               className="submit-cv-date-picker"
+                              onChange={(date) => {
+                                // Lấy giá trị của trường "Từ" (startDate)
+                                const startDate = form.getFieldValue([
+                                  "education",
+                                  field.name,
+                                  "startDate",
+                                ]);
+
+                                // Kiểm tra nếu có startDate và date được chọn nhỏ hơn startDate
+                                if (
+                                  startDate &&
+                                  date &&
+                                  date < startDate.startOf("month")
+                                ) {
+                                  // Hiển thị cảnh báo cho người dùng
+                                  message.warning(
+                                    'Thời gian "Đến" phải sau hoặc bằng thời gian "Từ"!',
+                                  );
+                                  // Reset trường "Đến" về null
+                                  form.setFieldValue(
+                                    ["education", field.name, "endDate"],
+                                    null,
+                                  );
+                                }
+                              }}
+                              disabledDate={(current) => {
+                                const startDate = form.getFieldValue([
+                                  "education",
+                                  field.name,
+                                  "startDate",
+                                ]);
+                                return (
+                                  startDate &&
+                                  current &&
+                                  current < startDate.startOf("month")
+                                );
+                              }}
                             />
                           </Form.Item>
                         </Col>
@@ -1066,16 +1160,63 @@ const SubmitCVForm = ({ onSubmit }) => {
                               format="MM/YYYY"
                               placeholder="Chọn tháng/năm"
                               className="submit-cv-date-picker"
+                              onChange={() => {
+                                form.setFieldValue(
+                                  ["projects", field.name, "endDate"],
+                                  null,
+                                );
+                              }}
                             />
                           </Form.Item>
                         </Col>
                         <Col xs={12}>
-                          <Form.Item name={[field.name, "endDate"]} label="Đến">
+                          <Form.Item
+                            name={[field.name, "endDate"]}
+                            label="Đến"
+                            dependencies={[[field.name, "startDate"]]}
+                          >
                             <DatePicker
                               picker="month"
                               format="MM/YYYY"
                               placeholder="Chọn tháng/năm"
                               className="submit-cv-date-picker"
+                              onChange={(date) => {
+                                // Lấy giá trị của trường "Từ" (startDate)
+                                const startDate = form.getFieldValue([
+                                  "projects",
+                                  field.name,
+                                  "startDate",
+                                ]);
+
+                                // Kiểm tra nếu có startDate và date được chọn nhỏ hơn startDate
+                                if (
+                                  startDate &&
+                                  date &&
+                                  date < startDate.startOf("month")
+                                ) {
+                                  // Hiển thị cảnh báo cho người dùng
+                                  message.warning(
+                                    'Thời gian "Đến" phải sau hoặc bằng thời gian "Từ"!',
+                                  );
+                                  // Reset trường "Đến" về null
+                                  form.setFieldValue(
+                                    ["projects", field.name, "endDate"],
+                                    null,
+                                  );
+                                }
+                              }}
+                              disabledDate={(current) => {
+                                const startDate = form.getFieldValue([
+                                  "projects",
+                                  field.name,
+                                  "startDate",
+                                ]);
+                                return (
+                                  startDate &&
+                                  current &&
+                                  current < startDate.startOf("month")
+                                );
+                              }}
                             />
                           </Form.Item>
                         </Col>
