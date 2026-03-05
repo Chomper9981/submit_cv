@@ -13,6 +13,7 @@ import {
   Card,
   Slider,
   Popconfirm,
+  message,
 } from "antd";
 import {
   UserOutlined,
@@ -242,9 +243,21 @@ const SubmitCVForm = ({ onSubmit }) => {
                 className="submit-cv-upload-item"
               >
                 <Upload
-                  beforeUpload={() => false}
+                  beforeUpload={(file) => {
+                    const isImage =
+                      file.type === "image/jpeg" ||
+                      file.type === "image/png" ||
+                      file.type === "image/webp";
+                    if (!isImage) {
+                      message.error(
+                        "Bạn chỉ có thể chọn tệp hình ảnh (JPG, PNG, WEBP)!",
+                      );
+                      return Upload.LIST_IGNORE;
+                    }
+                    return false;
+                  }}
                   maxCount={1}
-                  accept=".jpg,.jpeg,.png"
+                  accept=".jpg,.jpeg,.png,.webp"
                 >
                   <Button icon={<UploadOutlined />}>Chọn ảnh</Button>
                 </Upload>
@@ -1126,16 +1139,51 @@ const SubmitCVForm = ({ onSubmit }) => {
             </Form.List>
 
             {/* Submit */}
-            <Form.Item className="submit-cv-submit-container">
-              <Button
-                type="primary"
-                htmlType="submit"
-                size="large"
-                className="submit-cv-submit-btn"
+            <div className="submit-cv-submit-wrapper submit-cv-submit-container">
+              <Form.Item
+                name="attachedCVFile"
+                valuePropName="fileList"
+                getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
+                className="submit-cv-submit-item"
               >
-                Xem trước CV
-              </Button>
-            </Form.Item>
+                <Upload
+                  beforeUpload={(file) => {
+                    const isValid =
+                      file.type === "application/pdf" ||
+                      file.type === "application/msword" ||
+                      file.type ===
+                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+                    if (!isValid) {
+                      message.error(
+                        "Bạn chỉ có thể chọn tệp PDF hoặc Word (DOC/DOCX)!",
+                      );
+                      return Upload.LIST_IGNORE;
+                    }
+                    return false;
+                  }}
+                  maxCount={1}
+                  accept=".pdf,.doc,.docx"
+                >
+                  <Button
+                    size="large"
+                    icon={<UploadOutlined />}
+                    className="submit-cv-upload-btn"
+                  >
+                    Tải lên CV (PDF/DOCX)
+                  </Button>
+                </Upload>
+              </Form.Item>
+              <Form.Item className="submit-cv-submit-item">
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  size="large"
+                  className="submit-cv-submit-btn"
+                >
+                  Xem trước CV
+                </Button>
+              </Form.Item>
+            </div>
           </Form>
         </Card>
       </div>
