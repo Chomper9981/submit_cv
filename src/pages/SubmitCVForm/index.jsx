@@ -30,6 +30,13 @@ import "../../styles/SubmitCVForm.css";
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
+const blockNonNumeric = (e) => {
+  const allowed = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+  if (!/^\d$/.test(e.key) && !allowed.includes(e.key)) {
+    e.preventDefault();
+  }
+};
+
 const SubmitCVForm = ({ onSubmit }) => {
   const [form] = Form.useForm();
 
@@ -364,7 +371,11 @@ const SubmitCVForm = ({ onSubmit }) => {
                     },
                   ]}
                 >
-                  <Input size="large" placeholder="Nhập số điện thoại" />
+                  <Input
+                    onKeyDown={blockNonNumeric}
+                    size="large"
+                    placeholder="Nhập số điện thoại"
+                  />
                 </Form.Item>
               </Col>
               <Col xs={24} sm={8}>
@@ -505,31 +516,6 @@ const SubmitCVForm = ({ onSubmit }) => {
                               format="MM/YYYY"
                               placeholder="Chọn tháng/năm"
                               className="submit-cv-date-picker"
-                              onChange={(date) => {
-                                // Lấy giá trị của trường "Từ" (startDate)
-                                const startDate = form.getFieldValue([
-                                  "workExperiences",
-                                  field.name,
-                                  "startDate",
-                                ]);
-
-                                // Kiểm tra nếu có startDate và date được chọn nhỏ hơn startDate
-                                if (
-                                  startDate &&
-                                  date &&
-                                  date < startDate.startOf("month")
-                                ) {
-                                  // Hiển thị cảnh báo cho người dùng
-                                  message.warning(
-                                    'Thời gian "Đến" phải sau hoặc bằng thời gian "Từ"!',
-                                  );
-                                  // Reset trường "Đến" về null
-                                  form.setFieldValue(
-                                    ["workExperiences", field.name, "endDate"],
-                                    null,
-                                  );
-                                }
-                              }}
                               disabledDate={(current) => {
                                 const startDate = form.getFieldValue([
                                   "workExperiences",
@@ -675,31 +661,6 @@ const SubmitCVForm = ({ onSubmit }) => {
                               format="MM/YYYY"
                               placeholder="Chọn tháng/năm"
                               className="submit-cv-date-picker"
-                              onChange={(date) => {
-                                // Lấy giá trị của trường "Từ" (startDate)
-                                const startDate = form.getFieldValue([
-                                  "education",
-                                  field.name,
-                                  "startDate",
-                                ]);
-
-                                // Kiểm tra nếu có startDate và date được chọn nhỏ hơn startDate
-                                if (
-                                  startDate &&
-                                  date &&
-                                  date < startDate.startOf("month")
-                                ) {
-                                  // Hiển thị cảnh báo cho người dùng
-                                  message.warning(
-                                    'Thời gian "Đến" phải sau hoặc bằng thời gian "Từ"!',
-                                  );
-                                  // Reset trường "Đến" về null
-                                  form.setFieldValue(
-                                    ["education", field.name, "endDate"],
-                                    null,
-                                  );
-                                }
-                              }}
                               disabledDate={(current) => {
                                 const startDate = form.getFieldValue([
                                   "education",
@@ -1180,31 +1141,6 @@ const SubmitCVForm = ({ onSubmit }) => {
                               format="MM/YYYY"
                               placeholder="Chọn tháng/năm"
                               className="submit-cv-date-picker"
-                              onChange={(date) => {
-                                // Lấy giá trị của trường "Từ" (startDate)
-                                const startDate = form.getFieldValue([
-                                  "projects",
-                                  field.name,
-                                  "startDate",
-                                ]);
-
-                                // Kiểm tra nếu có startDate và date được chọn nhỏ hơn startDate
-                                if (
-                                  startDate &&
-                                  date &&
-                                  date < startDate.startOf("month")
-                                ) {
-                                  // Hiển thị cảnh báo cho người dùng
-                                  message.warning(
-                                    'Thời gian "Đến" phải sau hoặc bằng thời gian "Từ"!',
-                                  );
-                                  // Reset trường "Đến" về null
-                                  form.setFieldValue(
-                                    ["projects", field.name, "endDate"],
-                                    null,
-                                  );
-                                }
-                              }}
                               disabledDate={(current) => {
                                 const startDate = form.getFieldValue([
                                   "projects",
